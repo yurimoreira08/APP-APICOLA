@@ -1,8 +1,10 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
+import { Platform, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import type { Apiario } from "../types/Apiario";
 
 import { C } from "../theme/colors";
+import { T } from "../theme/typography";
 
 type Props = {
   apiario?: Apiario;
@@ -19,48 +21,59 @@ type Props = {
  * @param {Props} props Contexto do apiário atual para exibir o título e fechar modal.
  */
 export const ManejoScreen = ({ apiario, onBack }: Props) => {
+  const cards = Platform.OS === "web"
+    ? [
+        {
+          caixa: "02",
+          indicacoes: ["Colocar melgueira", "Fazer uma possível divisão"],
+        },
+        {
+          caixa: "03",
+          indicacoes: ["Colocar melgueira", "Fazer uma possível divisão"],
+        },
+      ]
+    : [
+        {
+          caixa: "02",
+          indicacoes: ["Monitorar espaço", "Reforçar alimentação"],
+        },
+      ];
+
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
+      <View style={styles.topBar}>
         <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-          <Text style={styles.backBtnText}>Voltar</Text>
+          <Feather name="arrow-left" size={22} color={C.text} />
         </TouchableOpacity>
-        <View>
-          <Text style={styles.headerTitle}>Sugestões de Manejo</Text>
-          <Text style={styles.headerSub}>{apiario?.nome || "Apiário Desconhecido"}</Text>
-        </View>
+        <Text style={styles.headerTitle}>Manejo</Text>
+        <Feather name="bell" size={20} color={C.text} />
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 40, gap: 16 }}>
-        <View style={styles.card}>
-            <View style={[styles.badge, { backgroundColor: C.warning + '20' }]}>
-                <Text style={[styles.badgeText, { color: C.warning }]}>Atenção</Text>
-            </View>
-            <Text style={styles.cardTitle}>Alimentação de Manutenção</Text>
-            <Text style={styles.cardSub}>
-                Baseado na última revisão, algumas caixas apresentam baixo estoque de mel. Considere entrar com alimentação proteica/energética.
-            </Text>
+        <TextInput
+          placeholder="Pesquisar caixa...."
+          placeholderTextColor={C.textSub}
+          style={styles.searchInput}
+        />
+
+        <View style={styles.topActionsCard}>
+          <TouchableOpacity style={styles.mainBtn} activeOpacity={0.8}>
+            <Text style={styles.mainBtnText}>Selecionar Caixas a Manejar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.mainBtn} activeOpacity={0.8}>
+            <Text style={styles.mainBtnText}>Manejo Feito</Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.card}>
-            <View style={[styles.badge, { backgroundColor: C.success + '20' }]}>
-                <Text style={[styles.badgeText, { color: C.success }]}>Bom Estado</Text>
-            </View>
-            <Text style={styles.cardTitle}>Espaço na Melgueira</Text>
-            <Text style={styles.cardSub}>
-                A maioria das caixas possui espaço suficiente. Nenhuma adição de melgueira é necessária por enquanto.
-            </Text>
-        </View>
-
-        <View style={styles.card}>
-            <View style={[styles.badge, { backgroundColor: C.accent + '20' }]}>
-                <Text style={[styles.badgeText, { color: C.accent }]}>Indicação</Text>
-            </View>
-            <Text style={styles.cardTitle}>Troca de Rainha</Text>
-            <Text style={styles.cardSub}>
-                As caixas C02 e C05 apresentam postura irregular ou falhas na cria. Programe a substituição das rainhas.
-            </Text>
-        </View>
+        {cards.map((card) => (
+          <View key={card.caixa} style={styles.card}>
+            <Text style={styles.cardTitle}>Caixa: {card.caixa}</Text>
+            <Text style={styles.cardTitle}>Indicações:</Text>
+            {card.indicacoes.map((item) => (
+              <Text key={item} style={styles.cardSub}>• {item}</Text>
+            ))}
+          </View>
+        ))}
       </ScrollView>
     </View>
   );
@@ -68,23 +81,68 @@ export const ManejoScreen = ({ apiario, onBack }: Props) => {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+  topBar: {
+    paddingTop: 54,
+    paddingBottom: 12,
+    paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: C.navBg,
     borderBottomWidth: 1,
     borderBottomColor: C.cardBorder,
   },
-  headerTitle: { fontSize: 20, fontWeight: "bold", color: C.text, marginLeft: 20 },
-  headerSub: { fontSize: 14, color: C.textSub, marginLeft: 20 },
-  backBtn: { padding: 8, backgroundColor: C.card, borderRadius: 8 },
-  backBtnText: { color: C.accent, fontWeight: "bold" },
+  headerTitle: { fontSize: 22, fontWeight: "800", color: C.text, ...T.bold },
+  headerIcon: { fontSize: 20, color: C.text },
+  backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  backBtnText: { color: C.text, fontWeight: "700", fontSize: 26 },
   content: { flex: 1, padding: 20 },
-  card: { backgroundColor: C.card, padding: 20, borderRadius: 12, borderWidth: 1, borderColor: C.cardBorder, gap: 8 },
-  badge: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
-  badgeText: { fontSize: 12, fontWeight: "bold" },
-  cardTitle: { color: C.text, fontSize: 16, fontWeight: "bold", marginTop: 4 },
-  cardSub: { color: C.textSub, fontSize: 14, lineHeight: 20 }
+  searchInput: {
+    backgroundColor: C.inputBg,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    borderRadius: 20,
+    minHeight: 50,
+    paddingHorizontal: 14,
+    color: C.text,
+    fontSize: 14,
+  },
+  topActionsCard: {
+    backgroundColor: C.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    padding: 10,
+    gap: 10,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.14,
+    shadowRadius: 7,
+    elevation: 2,
+  },
+  mainBtn: {
+    minHeight: 42,
+    borderRadius: 8,
+    backgroundColor: C.accent,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mainBtnText: { color: C.text, fontSize: 16, fontWeight: "700", ...T.medium },
+  card: {
+    backgroundColor: C.card,
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    gap: 8,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.14,
+    shadowRadius: 7,
+    elevation: 2,
+  },
+  cardTitle: { color: C.text, fontSize: 18, fontWeight: "700", marginTop: 2, ...T.bold },
+  cardSub: { color: C.text, fontSize: 16, lineHeight: 24, paddingLeft: 6, ...T.medium }
 });

@@ -2,17 +2,20 @@ import React, { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
+  TextInput,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { useRevisoes } from "../hooks/useRevisoes";
 import type { Revisao } from "../types/Revisao";
 import type { Apiario } from "../types/Apiario";
 import { useVoiceInput } from "../voice/useVoiceInput";
 
 import { C } from "../theme/colors";
+import { T } from "../theme/typography";
 
 type Props = {
   apiario?: Apiario;
@@ -35,6 +38,7 @@ type Props = {
 export const ListaRevisoesScreen = ({ apiario, caixaFiltro, onNewRevisao, onEditRevisao, onBack }: Props) => {
   const { revisoes, load, remove } = useRevisoes(apiario?.id?.toString(), caixaFiltro);
   const { state: voice, start, stop } = useVoiceInput();
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     void load();
@@ -82,13 +86,13 @@ export const ListaRevisoesScreen = ({ apiario, caixaFiltro, onNewRevisao, onEdit
             onPress={() => onEditRevisao(item)}
             style={[styles.actionBtn, styles.actionBtnEdit]}
           >
-            <Text style={styles.actionBtnText}>✏️</Text>
+            <Text style={styles.actionBtnText}>Editar</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={() => item.id && handleDelete(item.id)}
             style={[styles.actionBtn, styles.actionBtnDelete]}
           >
-            <Text style={styles.actionBtnText}>🗑️</Text>
+            <Text style={styles.actionBtnText}>Excluir</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -111,16 +115,31 @@ export const ListaRevisoesScreen = ({ apiario, caixaFiltro, onNewRevisao, onEdit
     <View style={styles.root}>
       <View style={styles.header}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity onPress={onBack} style={{ marginRight: 15 }}>
-            <Text style={{ fontSize: 24, color: C.text, fontWeight: "bold" }}>{"<"}</Text>
+          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+            <Feather name="arrow-left" size={22} color={C.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            Revisões {apiario ? `(${apiario.nome})` : ""} {caixaFiltro !== undefined ? `- Caixa ${caixaFiltro}` : ""}
+            🐝 Revisão
           </Text>
         </View>
         <TouchableOpacity onPress={onNewRevisao} style={styles.addBtn}>
-          <Text style={styles.addBtnText}>+ Nova Revisão</Text>
+          <Text style={styles.addBtnText}>Fazer Revisão</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.searchWrap}>
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder={caixaFiltro !== undefined ? `Pesquisar caixa ${caixaFiltro}...` : "Pesquisar caixa..."}
+          placeholderTextColor={C.textSub}
+          style={styles.searchInput}
+        />
+        {(apiario || caixaFiltro !== undefined) && (
+          <Text style={styles.contextText}>
+            {apiario ? `Apiário: ${apiario.nome}` : ""}{apiario && caixaFiltro !== undefined ? " • " : ""}{caixaFiltro !== undefined ? `Caixa ${caixaFiltro}` : ""}
+          </Text>
+        )}
       </View>
 
       {voice.listening && (
@@ -130,7 +149,14 @@ export const ListaRevisoesScreen = ({ apiario, caixaFiltro, onNewRevisao, onEdit
       )}
 
       <FlatList
-        data={revisoes}
+        data={revisoes.filter((item) => {
+          if (!search.trim()) return true;
+          const normalized = search.toLowerCase();
+          const tipo = (item.tipo || "").toLowerCase();
+          const caixa = item.caixa !== undefined ? String(item.caixa) : "";
+          const obs = (item.observacao || "").toLowerCase();
+          return tipo.includes(normalized) || caixa.includes(normalized) || obs.includes(normalized);
+        })}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
@@ -148,61 +174,90 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 55,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: C.card,
+    paddingTop: 54,
+    paddingBottom: 12,
+    paddingHorizontal: 14,
+    backgroundColor: C.navBg,
     borderBottomWidth: 1,
     borderBottomColor: C.cardBorder,
   },
-  headerTitle: { fontSize: 24, fontWeight: "900", color: C.text },
+  backBtn: {
+    marginRight: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backBtnText: { fontSize: 26, color: C.text, fontWeight: "700" },
+  headerTitle: { fontSize: 22, fontWeight: "800", color: C.text, ...T.bold },
   addBtn: {
     backgroundColor: C.accent,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
+    minHeight: 44,
+    borderRadius: 10,
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
   },
-  addBtnText: { color: "#000", fontWeight: "800", fontSize: 13 },
+  addBtnText: { color: C.text, fontWeight: "700", fontSize: 14, ...T.medium },
+  searchWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, gap: 6 },
+  searchInput: {
+    backgroundColor: C.inputBg,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    borderRadius: 16,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    color: C.text,
+    fontSize: 14,
+  },
+  contextText: { color: C.textSub, fontSize: 12 },
   listContent: { padding: 16, paddingBottom: 40, gap: 12 },
   card: {
     backgroundColor: C.card,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 16,
     borderWidth: 1,
     borderColor: C.cardBorder,
     gap: 10,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.14,
+    shadowRadius: 7,
+    elevation: 2,
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
-  cardTitle: { color: C.text, fontSize: 16, fontWeight: "700" },
-  cardDate: { color: C.textSub, fontSize: 13, marginTop: 2 },
+  cardTitle: { color: C.text, fontSize: 20, fontWeight: "700", ...T.bold },
+  cardDate: { color: C.textSub, fontSize: 12, marginTop: 2 },
   cardActions: { flexDirection: "row", gap: 8 },
   actionBtn: {
-    width: 38,
-    height: 38,
+    minHeight: 40,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ffffff08",
+    backgroundColor: C.accent,
     borderWidth: 1,
     borderColor: C.cardBorder,
+    paddingHorizontal: 10,
   },
-  actionBtnEdit: { borderColor: C.accent + "44" },
-  actionBtnDelete: { borderColor: C.red + "44" },
-  actionBtnText: { fontSize: 16 },
+  actionBtnEdit: { backgroundColor: C.accent },
+  actionBtnDelete: { backgroundColor: "#f7e6cf" },
+  actionBtnText: { fontSize: 12, color: C.text, fontWeight: "700" },
   badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   badge: {
-    backgroundColor: "#ffffff10",
+    backgroundColor: "#edd6ad",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
-  badgeGreen: { backgroundColor: "#34c77b22", borderWidth: 1, borderColor: C.green },
-  badgeAccent: { backgroundColor: "#f5a62322", borderWidth: 1, borderColor: C.accent },
+  badgeGreen: { backgroundColor: "#dcebd9", borderWidth: 1, borderColor: C.green },
+  badgeAccent: { backgroundColor: "#f6dfb9", borderWidth: 1, borderColor: C.cardBorder },
   badgeText: { color: C.text, fontSize: 11, fontWeight: "700" },
   cardObs: { color: C.textSub, fontSize: 13, fontStyle: "italic" },
   emptyText: { color: C.textSub, textAlign: "center", marginTop: 60, fontSize: 15 },
   micStatusRow: {
-    backgroundColor: C.card,
+    backgroundColor: C.navBg,
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: C.cardBorder,

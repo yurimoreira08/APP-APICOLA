@@ -8,10 +8,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { useApiarios } from "../hooks/useApiarios";
 import type { Apiario } from "../types/Apiario";
 
 import { C } from "../theme/colors";
+import { T } from "../theme/typography";
 
 /**
  * Propriedades do Formulário de Apiário
@@ -61,6 +63,9 @@ export const ApiarioScreen = ({
       };
 
       await save(novo);
+      if (!editingApiario && !isNaN(parsedCaixas) && parsedCaixas > 0) {
+        Alert.alert("Cadastro concluído", `${parsedCaixas} caixas foram criadas automaticamente. Você pode editar os nomes depois em Ver Caixas.`);
+      }
       onNavigateToList();
     } catch (e: any) {
       Alert.alert("Erro", e.message);
@@ -69,25 +74,24 @@ export const ApiarioScreen = ({
 
   return (
     <View style={styles.root}>
-      <View style={styles.topHeader}>
-        <TouchableOpacity onPress={onBack} style={styles.backLink}>
-          <Text style={styles.backLinkText}>{"< Voltar"}</Text>
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+          <Feather name="arrow-left" size={22} color={C.text} />
         </TouchableOpacity>
+        <Text style={styles.topBarTitle}>🐝 Cadastrar Apiário</Text>
+        <Feather name="bell" size={20} color={C.text} />
       </View>
 
       <View style={styles.header}>
         <Text style={styles.headerTitle}>
-          {editingApiario ? "Editar Apiário" : "Novo Apiário"}
+          {editingApiario ? "Editar Apiário" : "Cadastrar Apiário"}
         </Text>
-        <Text style={styles.headerSub}>Preencha os dados abaixo</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.section}>📋 Informações Básicas</Text>
-
         <TextInput
           style={styles.input}
-          placeholder="Nome do apiário"
+          placeholder="Digite o nome do seu apiário..."
           placeholderTextColor={C.textSub}
           value={nome}
           onChangeText={setNome}
@@ -95,7 +99,7 @@ export const ApiarioScreen = ({
 
         <TextInput
           style={styles.input}
-          placeholder="Local do apiário"
+          placeholder="Digite o local do seu apiário..."
           placeholderTextColor={C.textSub}
           value={local}
           onChangeText={setLocal}
@@ -103,7 +107,7 @@ export const ApiarioScreen = ({
 
         <TextInput
           style={styles.input}
-          placeholder="Quantidade de caixas"
+          placeholder="Digite a quantidade de caixas do seu apiário..."
           placeholderTextColor={C.textSub}
           keyboardType="numeric"
           value={quantidadeCaixas}
@@ -112,7 +116,7 @@ export const ApiarioScreen = ({
 
         <TextInput
           style={[styles.input, styles.textArea]}
-          placeholder="Descrição"
+          placeholder="Digite a descrição do seu apiário..."
           placeholderTextColor={C.textSub}
           multiline
           numberOfLines={4}
@@ -121,7 +125,7 @@ export const ApiarioScreen = ({
         />
 
         <TouchableOpacity style={styles.btnSave} onPress={handleSave}>
-          <Text style={styles.btnSaveText}>💾  Salvar Apiário</Text>
+          <Text style={styles.btnSaveText}>{editingApiario ? "Salvar alterações" : "Finalizar cadastro"}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -130,34 +134,58 @@ export const ApiarioScreen = ({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
-  topHeader: { paddingTop: 40, paddingHorizontal: 20 },
-  backLink: { paddingVertical: 8 },
-  backLinkText: { color: C.accent, fontWeight: "700", fontSize: 16 },
-  header: { alignItems: "center", paddingVertical: 10 },
-  headerTitle: { fontSize: 26, fontWeight: "800", color: C.text, letterSpacing: 0.5 },
-  headerSub: { fontSize: 13, color: C.textSub, marginTop: 4 },
-  scroll: { padding: 20, gap: 12 },
-  section: { fontSize: 15, fontWeight: "700", color: C.accent, marginTop: 6, marginBottom: 6 },
+  topBar: {
+    paddingTop: 54,
+    paddingBottom: 12,
+    paddingHorizontal: 14,
+    backgroundColor: C.navBg,
+    borderBottomWidth: 1,
+    borderBottomColor: C.cardBorder,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backBtnText: { color: C.text, fontWeight: "700", fontSize: 26 },
+  topBarTitle: { fontSize: 20, fontWeight: "800", color: C.text, flex: 1, ...T.bold },
+  topBarIcon: { fontSize: 20, color: C.text },
+  header: { alignItems: "center", paddingTop: 14, paddingBottom: 4 },
+  headerTitle: { fontSize: 28, fontWeight: "700", color: C.text, ...T.bold },
+  scroll: { paddingHorizontal: 20, paddingTop: 8, gap: 14, paddingBottom: 40 },
   input: {
-    backgroundColor: C.card,
-    borderRadius: 14,
+    minHeight: 50,
+    backgroundColor: C.inputBg,
+    borderRadius: 10,
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
+    paddingVertical: 12,
+    fontSize: 14,
     color: C.text,
-    borderWidth: 1.5,
+    ...T.medium,
+    borderWidth: 1,
     borderColor: C.cardBorder,
   },
   textArea: {
-    height: 100,
+    height: 64,
     textAlignVertical: "top",
   },
   btnSave: {
-    backgroundColor: C.green,
-    borderRadius: 16,
-    paddingVertical: 16,
+    alignSelf: "center",
+    backgroundColor: C.accent,
+    borderRadius: 10,
+    minHeight: 44,
+    minWidth: 164,
+    paddingHorizontal: 18,
     alignItems: "center",
-    marginTop: 16,
+    justifyContent: "center",
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
   },
-  btnSaveText: { color: "#000", fontWeight: "800", fontSize: 16 },
+  btnSaveText: { color: C.text, fontWeight: "700", fontSize: 16, ...T.medium },
 });

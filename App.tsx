@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
 import { initDb } from "./database/db";
 import { StyleSheet, View, Text, TouchableOpacity, Platform, BackHandler, SafeAreaView } from "react-native";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { MenuScreen } from "./src/screens/MenuScreen";
 import { ListaApiariosScreen } from "./src/screens/ListaApiariosScreen";
 import { ApiarioScreen } from "./src/screens/ApiarioScreen";
 import { ListaRevisoesScreen } from "./src/screens/ListaRevisoesScreen";
-import { RevisaoScreen } from "./src/screens/RevisaoScreen";
+import { RevisaoFormScreen } from "./src/screens/RevisaoFormScreen";
 import { ConfiguracoesScreen } from "./src/screens/ConfiguracoesScreen";
 import { ManejoScreen } from "./src/screens/ManejoScreen";
 import { CaixasGeralScreen } from "./src/screens/CaixasGeralScreen";
+import { EscolhaAcaoScreen } from "./src/screens/EscolhaAcaoScreen";
+import { IscagemScreen } from "./src/screens/IscagemScreen";
+import { IscagemFormScreen } from "./src/screens/IscagemFormScreen";
 
 import type { Apiario } from "./src/types/Apiario";
 import type { Revisao } from "./src/types/Revisao";
@@ -17,14 +21,21 @@ type ScreenName =
   | "menu" 
   | "apiarios" 
   | "apiario_form" 
-  | "apiarios_revisao_manejo" 
+  | "escolha_acao"
+  | "apiarios_revisao"
+  | "apiarios_manejo"
   | "revisoes" 
   | "revisao_form"
   | "manejo_sugestoes"
   | "caixas"
+  | "iscagem"
+  | "iscagem_form"
   | "configuracoes";
 
+type ApiarioFormOrigin = "apiarios" | "apiarios_revisao";
+
 import { C } from "./src/theme/colors";
+import { T } from "./src/theme/typography";
 
 /**
  * Ponto de Entrada Global Mestre (Main App)
@@ -43,6 +54,8 @@ export default function App() {
   const [editingRevisao, setEditingRevisao] = useState<Revisao | undefined>(undefined);
   // Default caixa for when doing a revision of a specific box from the Caixas screen
   const [selectedCaixa, setSelectedCaixa] = useState<number | undefined>(undefined);
+  const [caixasBackScreen, setCaixasBackScreen] = useState<"menu" | "apiarios_revisao">("menu");
+  const [apiarioFormOrigin, setApiarioFormOrigin] = useState<ApiarioFormOrigin>("apiarios");
 
   useEffect(() => {
     initDb().then(() => setDbReady(true)).catch(console.error);
@@ -52,17 +65,27 @@ export default function App() {
     const backAction = () => {
       if (screen === "menu") return false; // Default behavior (exit app)
       
-      if (screen === "configuracoes" || screen === "apiarios" || screen === "apiarios_revisao_manejo" || screen === "caixas") {
+      if (screen === "configuracoes" || screen === "apiarios") {
         setScreen("menu");
+      } else if (screen === "caixas") {
+        setScreen(caixasBackScreen);
+      } else if (screen === "escolha_acao") {
+        setScreen("menu");
+      } else if (screen === "apiarios_revisao" || screen === "apiarios_manejo") {
+        setScreen("escolha_acao");
       } else if (screen === "apiario_form") {
-        setScreen("apiarios");
+        setScreen(apiarioFormOrigin);
       } else if (screen === "manejo_sugestoes") {
-        setScreen("apiarios_revisao_manejo");
+        setScreen("apiarios_manejo");
       } else if (screen === "revisoes") {
         if (selectedCaixa !== undefined) setScreen("caixas");
-        else setScreen("apiarios_revisao_manejo");
+        else setScreen("apiarios_revisao");
       } else if (screen === "revisao_form") {
         setScreen("revisoes");
+      } else if (screen === "iscagem_form") {
+        setScreen("iscagem");
+      } else if (screen === "iscagem") {
+        setScreen("menu");
       } else {
         setScreen("menu");
       }
@@ -75,7 +98,7 @@ export default function App() {
     );
 
     return () => backHandler.remove();
-  }, [screen, selectedCaixa]);
+  }, [screen, selectedCaixa, caixasBackScreen, apiarioFormOrigin]);
 
   if (!dbReady) {
     return null; /* Optional splash screen */
@@ -85,10 +108,43 @@ export default function App() {
     if (screen === "menu") {
       return (
         <MenuScreen 
-          onGoToNovoApiario={() => setScreen("apiario_form")}
+          onGoToIscagem={() => setScreen("iscagem")}
           onGoToVerApiarios={() => setScreen("apiarios")}
-          onGoToRevisoesManejo={() => setScreen("apiarios_revisao_manejo")}
-          onGoToCaixas={() => setScreen("caixas")}
+          onGoToRevisoesManejo={() => setScreen("escolha_acao")}
+          onGoToCaixas={() => {
+            setCaixasBackScreen("menu");
+            setSelectedApiario(undefined);
+            setSelectedCaixa(undefined);
+            setScreen("caixas");
+          }}
+        />
+      );
+    }
+
+    if (screen === "iscagem") {
+      return (
+        <IscagemScreen
+          onBack={() => setScreen("menu")}
+          onNovaIscagem={() => setScreen("iscagem_form")}
+        />
+      );
+    }
+
+    if (screen === "iscagem_form") {
+      return (
+        <IscagemFormScreen
+          onBack={() => setScreen("iscagem")}
+          onDone={() => setScreen("iscagem")}
+        />
+      );
+    }
+
+    if (screen === "escolha_acao") {
+      return (
+        <EscolhaAcaoScreen
+          onBack={() => setScreen("menu")}
+          onEscolherRevisao={() => setScreen("apiarios_revisao")}
+          onEscolherManejo={() => setScreen("apiarios_manejo")}
         />
       );
     }
@@ -102,10 +158,12 @@ export default function App() {
         <ListaApiariosScreen 
           onNewApiario={() => {
             setEditingApiario(undefined);
+            setApiarioFormOrigin("apiarios");
             setScreen("apiario_form");
           }}
           onEditApiario={(apiario) => {
             setEditingApiario(apiario);
+            setApiarioFormOrigin("apiarios");
             setScreen("apiario_form");
           }}
           onBack={() => setScreen("menu")}
@@ -117,29 +175,49 @@ export default function App() {
       return (
         <ApiarioScreen 
           editingApiario={editingApiario}
-          onBack={() => setScreen("apiarios")}
+          onBack={() => setScreen(apiarioFormOrigin)}
           onNavigateToList={() => {
             setEditingApiario(undefined);
-            setScreen("apiarios");
+            setScreen(apiarioFormOrigin);
           }}
         />
       );
     }
   
-    if (screen === "apiarios_revisao_manejo") {
+    if (screen === "apiarios_revisao") {
       return (
         <ListaApiariosScreen 
-          isRevisaoManejoMode
+          isRevisaoMode
           onSelectRevisao={(apiario) => {
             setSelectedApiario(apiario);
             setSelectedCaixa(undefined); // Full apiary revision history
             setScreen("revisoes");
           }}
+          onEditApiario={(apiario) => {
+            setEditingApiario(apiario);
+            setApiarioFormOrigin("apiarios_revisao");
+            setScreen("apiario_form");
+          }}
+          onSelectCaixas={(apiario) => {
+            setSelectedApiario(apiario);
+            setSelectedCaixa(undefined);
+            setCaixasBackScreen("apiarios_revisao");
+            setScreen("caixas");
+          }}
+          onBack={() => setScreen("escolha_acao")}
+        />
+      );
+    }
+
+    if (screen === "apiarios_manejo") {
+      return (
+        <ListaApiariosScreen
+          isManejoMode
           onSelectManejo={(apiario) => {
             setSelectedApiario(apiario);
             setScreen("manejo_sugestoes");
           }}
-          onBack={() => setScreen("menu")}
+          onBack={() => setScreen("escolha_acao")}
         />
       );
     }
@@ -148,7 +226,7 @@ export default function App() {
       return (
         <ManejoScreen 
           apiario={selectedApiario}
-          onBack={() => setScreen("apiarios_revisao_manejo")}
+          onBack={() => setScreen("apiarios_manejo")}
         />
       );
     }
@@ -156,15 +234,16 @@ export default function App() {
     if (screen === "caixas") {
       return (
         <CaixasGeralScreen 
-          onFazerRevisao={(apiarioId, caixa) => {
+          apiarioIdFiltro={selectedApiario?.id ? String(selectedApiario.id) : undefined}
+          onFazerRevisao={(apiarioId, caixa, apiarioNome) => {
             // Find the apiario if possible, but actually we need apiario complete?
             // Using a simple object just with Id to satisfy the apiario prop, 
             // since we only really need its ID to save the new revisao.
-            setSelectedApiario({ id: parseInt(apiarioId), nome: "" } as any); 
+            setSelectedApiario({ id: parseInt(apiarioId), nome: apiarioNome || "" } as any); 
             setSelectedCaixa(caixa);
             setScreen("revisoes");
           }}
-          onBack={() => setScreen("menu")}
+          onBack={() => setScreen(caixasBackScreen)}
         />
       );
     }
@@ -184,7 +263,7 @@ export default function App() {
           }}
           onBack={() => {
             if (selectedCaixa !== undefined) setScreen("caixas");
-            else setScreen("apiarios_revisao_manejo");
+            else setScreen("apiarios_revisao");
           }}
         />
       );
@@ -192,7 +271,7 @@ export default function App() {
   
     if (screen === "revisao_form") {
       return (
-        <RevisaoScreen 
+        <RevisaoFormScreen 
           apiario={selectedApiario}
           editingRevisao={editingRevisao}
           defaultCaixa={selectedCaixa}
@@ -215,25 +294,30 @@ export default function App() {
           {renderScreen()}
         </View>
 
-        {/* Global Footer */}
-        <View style={styles.footer}>
-          <TouchableOpacity 
-            style={styles.footerBtn}
-            onPress={() => setScreen("menu")}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.footerIcon, screen === "menu" ? styles.footerIconActive : null]}>🏠</Text>
-            <Text style={[styles.footerText, screen === "menu" ? styles.footerTextActive : null]}>Início</Text>
-          </TouchableOpacity>
+        <View style={styles.footerWrap}>
+          <View style={styles.footer}>
+            <TouchableOpacity 
+              style={[styles.footerBtn, screen === "menu" ? styles.footerBtnActive : null]}
+              onPress={() => setScreen("menu")}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Ir para início"
+            >
+              <Ionicons name="home-outline" size={22} color={C.text} />
+              <Text style={[styles.footerText, screen === "menu" ? styles.footerTextActive : null]}>Início</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.footerBtn}
-            onPress={() => setScreen("configuracoes")}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.footerIcon, screen === "configuracoes" ? styles.footerIconActive : null]}>⚙️</Text>
-            <Text style={[styles.footerText, screen === "configuracoes" ? styles.footerTextActive : null]}>Configurações</Text>
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.footerBtn, screen === "configuracoes" ? styles.footerBtnActive : null]}
+              onPress={() => setScreen("configuracoes")}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Ir para configurações"
+            >
+              <Feather name="settings" size={20} color={C.text} />
+              <Text style={[styles.footerText, screen === "configuracoes" ? styles.footerTextActive : null]}>Config</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -243,48 +327,59 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: C.card, // Matches footer to blend with safe area bottoms
+    backgroundColor: C.surface,
   },
   container: {
     flex: 1,
-    backgroundColor: C.bg, // Main background
+    backgroundColor: C.surface,
   },
   content: {
     flex: 1,
   },
+  footerWrap: {
+    paddingHorizontal: 14,
+    paddingBottom: Platform.OS === "ios" ? 14 : 10,
+    paddingTop: 6,
+    backgroundColor: C.surface,
+  },
   footer: {
     flexDirection: "row",
-    backgroundColor: C.card,
-    borderTopWidth: 1,
-    borderTopColor: C.cardBorder,
-    paddingBottom: Platform.OS === "ios" ? 20 : 10,
-    paddingTop: 10,
-    justifyContent: "space-around",
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: C.navBg,
+    borderRadius: 28,
+    padding: 6,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    elevation: 8,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   footerBtn: {
+    minHeight: 56,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     flex: 1,
+    flexDirection: "row",
+    gap: 8,
+  },
+  footerBtnActive: {
+    backgroundColor: C.navActive,
   },
   footerIcon: {
     fontSize: 24,
-    opacity: 0.6,
-  },
-  footerIconActive: {
-    opacity: 1,
+    color: C.text,
   },
   footerText: {
-    fontSize: 12,
+    fontSize: 14,
     color: C.textSub,
-    marginTop: 4,
     fontWeight: "600",
+    ...T.medium,
   },
   footerTextActive: {
-    color: C.accent,
+    color: C.text,
+    fontWeight: "800",
+    ...T.bold,
   }
 });

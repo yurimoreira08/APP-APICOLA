@@ -2,25 +2,31 @@ import React, { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { useApiarios } from "../hooks/useApiarios";
 import type { Apiario } from "../types/Apiario";
 
 import { C } from "../theme/colors";
+import { T } from "../theme/typography";
 
 type Props = {
   isSelectionMode?: boolean;
   isRevisaoManejoMode?: boolean;
+  isRevisaoMode?: boolean;
+  isManejoMode?: boolean;
   onNewApiario?: () => void;
   onEditApiario?: (apiario: Apiario) => void;
   onFazerRevisao?: (apiario: Apiario) => void;
   onSelectApiario?: (apiario: Apiario) => void;
   onSelectRevisao?: (apiario: Apiario) => void;
   onSelectManejo?: (apiario: Apiario) => void;
+  onSelectCaixas?: (apiario: Apiario) => void;
   onBack: () => void;
 };
 
@@ -37,15 +43,35 @@ type Props = {
 export const ListaApiariosScreen = ({ 
   isSelectionMode, 
   isRevisaoManejoMode,
+  isRevisaoMode,
+  isManejoMode,
   onNewApiario, 
   onEditApiario, 
   onFazerRevisao,
   onSelectApiario,
   onSelectRevisao,
   onSelectManejo,
+  onSelectCaixas,
   onBack 
 }: Props) => {
   const { apiarios, load, remove } = useApiarios();
+
+  const mockApiariosWeb: Apiario[] = [
+    {
+      id: 1,
+      nome: "Apiário Boiles",
+      local: "RN",
+      quantidadeCaixas: 20,
+      descricao: "Apiário Novo",
+    },
+    {
+      id: 2,
+      nome: "Caixas Soltas",
+      local: "",
+      descricao: "Caixas que não estão dentro de um apiário",
+      quantidadeCaixas: 0,
+    },
+  ];
 
   useEffect(() => {
     void load();
@@ -67,6 +93,63 @@ export const ListaApiariosScreen = ({
   };
 
   const renderItem = ({ item }: { item: Apiario }) => {
+    if (isRevisaoMode) {
+      const isCaixasSoltas = item.nome.toLowerCase().includes("caixas soltas");
+      return (
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardInfo}><Text style={styles.cardInfoLabel}>Nome:</Text> {item.nome}</Text>
+              {item.local ? <Text style={styles.cardInfo}><Text style={styles.cardInfoLabel}>Local:</Text> {item.local}</Text> : null}
+              {item.quantidadeCaixas ? <Text style={styles.cardInfo}><Text style={styles.cardInfoLabel}>Quantidade de caixas:</Text> {item.quantidadeCaixas}</Text> : null}
+              {item.descricao ? <Text style={styles.cardInfo}><Text style={styles.cardInfoLabel}>Descrição:</Text> {item.descricao}</Text> : null}
+            </View>
+            <View style={styles.cardActionsVertical}>
+              <TouchableOpacity
+                onPress={() => onEditApiario?.(item)}
+                style={styles.smallActionBtn}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.smallActionText}>{isCaixasSoltas ? "Editar\nDescrição" : "Editar\nApiário"}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.cardBottomActions}>
+            <TouchableOpacity onPress={() => onSelectRevisao?.(item)} style={styles.smallActionBtn} activeOpacity={0.8}>
+              <Text style={styles.smallActionText}>Fazer\nRevisão</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => onSelectCaixas?.(item)} style={styles.smallActionBtn} activeOpacity={0.8}>
+              <Text style={styles.smallActionText}>Ver\nCaixas</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    if (isManejoMode) {
+      return (
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardInfo}><Text style={styles.cardInfoLabel}>Nome:</Text> {item.nome}</Text>
+              {item.local ? <Text style={styles.cardInfo}><Text style={styles.cardInfoLabel}>Local:</Text> {item.local}</Text> : null}
+              {item.quantidadeCaixas ? <Text style={styles.cardInfo}><Text style={styles.cardInfoLabel}>Quantidade de caixas:</Text> {item.quantidadeCaixas}</Text> : null}
+              {item.descricao ? <Text style={styles.cardInfo}><Text style={styles.cardInfoLabel}>Descrição:</Text> {item.descricao}</Text> : null}
+            </View>
+          </View>
+          <View style={styles.cardBottomActionsSingle}>
+            <TouchableOpacity
+              onPress={() => onSelectManejo?.(item)}
+              style={styles.smallActionBtn}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.smallActionText}>Ver\nindicações</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
     if (isRevisaoManejoMode) {
       return (
         <View style={styles.card}>
@@ -78,17 +161,17 @@ export const ListaApiariosScreen = ({
           <View style={[styles.cardActions, { marginTop: 12, width: '100%', justifyContent: 'space-between' }]}>
             <TouchableOpacity 
               onPress={() => onSelectRevisao?.(item)}
-              style={[styles.btnAction, { backgroundColor: C.accent }]}
+              style={styles.btnAction}
               activeOpacity={0.8}
             >
-              <Text style={styles.btnActionText}>🍯 Fazer Revisão</Text>
+              <Text style={styles.btnActionText}>Fazer Revisão</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               onPress={() => onSelectManejo?.(item)}
-              style={[styles.btnAction, { backgroundColor: C.bg, borderColor: C.accent, borderWidth: 1 }]}
+              style={[styles.btnAction, styles.btnActionSecondary]}
               activeOpacity={0.8}
             >
-              <Text style={[styles.btnActionText, { color: C.accent }]}>🔄 Fazer Manejo</Text>
+              <Text style={[styles.btnActionText, styles.btnActionSecondaryText]}>Fazer Manejo</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -116,37 +199,31 @@ export const ListaApiariosScreen = ({
         <View style={styles.cardHeader}>
           <View style={{ flex: 1 }}>
             <Text style={styles.cardTitle}>{item.nome}</Text>
-            <Text style={styles.cardDate}>
-              {item.quantidadeCaixas || 0} caixas {item.local ? `• ${item.local}` : ""}
-            </Text>
+            <Text style={styles.cardDate}>{item.local ? `Local: ${item.local}` : "Local não informado"}</Text>
+            <Text style={styles.cardText}>Quantidade de caixas: {item.quantidadeCaixas || 0}</Text>
+            {item.descricao ? <Text style={styles.cardText}>Descrição: {item.descricao}</Text> : null}
           </View>
-          <View style={styles.cardActions}>
+          <View style={styles.cardActionsVertical}>
             <TouchableOpacity 
               onPress={() => onFazerRevisao?.(item)}
-              style={{ backgroundColor: C.accent, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, marginRight: 6 }}
+              style={styles.smallActionBtn}
             >
-              <Text style={{ color: "#000", fontWeight: "bold", fontSize: 13 }}>Revisão</Text>
+              <Text style={styles.smallActionText}>Fazer Revisão</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               onPress={() => onEditApiario?.(item)}
-              style={[styles.actionBtn, styles.actionBtnEdit]}
+              style={styles.smallActionBtn}
             >
-              <Text style={styles.actionBtnText}>✏️</Text>
+              <Text style={styles.smallActionText}>Editar Apiário</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               onPress={() => item.id && handleDelete(item.id)}
-              style={[styles.actionBtn, styles.actionBtnDelete]}
+              style={[styles.smallActionBtn, styles.deleteBtn]}
             >
-              <Text style={styles.actionBtnText}>🗑️</Text>
+              <Text style={styles.deleteBtnText}>Excluir</Text>
             </TouchableOpacity>
           </View>
         </View>
-
-        {item.descricao ? (
-          <Text style={styles.cardObs} numberOfLines={2}>
-            📝 {item.descricao}
-          </Text>
-        ) : null}
       </View>
     );
   };
@@ -155,22 +232,22 @@ export const ListaApiariosScreen = ({
     <View style={styles.root}>
       <View style={styles.header}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity onPress={onBack} style={{ marginRight: 15 }}>
-            <Text style={{ fontSize: 24, color: C.text, fontWeight: "bold" }}>{"<"}</Text>
+          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+            <Feather name="arrow-left" size={22} color={C.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {isSelectionMode ? "Selecionar Apiário" : (isRevisaoManejoMode ? "Revisão e Manejo" : "Apiários")}
+            🐝 {isSelectionMode ? "Selecionar Apiário" : (isRevisaoManejoMode ? "Revisão e Manejo" : isRevisaoMode ? "Revisão" : isManejoMode ? "Manejo" : "Cadastrar Apiário")}
           </Text>
         </View>
-        {!isSelectionMode && !isRevisaoManejoMode && onNewApiario && (
+        {!isSelectionMode && !isRevisaoManejoMode && !isRevisaoMode && !isManejoMode && onNewApiario && (
           <TouchableOpacity onPress={onNewApiario} style={styles.addBtn}>
-            <Text style={styles.addBtnText}>+ Novo</Text>
+            <Text style={styles.addBtnText}>＋ Cadastrar</Text>
           </TouchableOpacity>
         )}
       </View>
 
       <FlatList
-        data={apiarios}
+        data={Platform.OS === "web" && (isRevisaoMode || isManejoMode) && apiarios.length === 0 ? mockApiariosWeb : apiarios}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
@@ -188,57 +265,98 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 55,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: C.card,
+    paddingTop: 54,
+    paddingBottom: 12,
+    paddingHorizontal: 14,
+    backgroundColor: C.navBg,
     borderBottomWidth: 1,
     borderBottomColor: C.cardBorder,
   },
-  headerTitle: { fontSize: 24, fontWeight: "900", color: C.text },
+  backBtn: {
+    marginRight: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backBtnText: { fontSize: 26, fontWeight: "700", color: C.text },
+  headerTitle: { fontSize: 22, fontWeight: "800", color: C.text, ...T.bold },
   addBtn: {
     backgroundColor: C.accent,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    minHeight: 44,
+    borderRadius: 10,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: C.cardBorder,
   },
-  addBtnText: { color: "#000", fontWeight: "800", fontSize: 13 },
+  addBtnText: { color: C.text, fontWeight: "700", fontSize: 14, ...T.medium },
   listContent: { padding: 16, paddingBottom: 40, gap: 12 },
   card: {
     backgroundColor: C.card,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 16,
     borderWidth: 1,
     borderColor: C.cardBorder,
     gap: 10,
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.14,
+    shadowRadius: 7,
+    elevation: 2,
   },
   cardContent: { gap: 4 },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
-  cardTitle: { color: C.text, fontSize: 18, fontWeight: "700" },
-  cardDate: { color: C.textSub, fontSize: 13, marginTop: 2 },
-  cardText: { color: C.textSub, fontSize: 14 },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 },
+  cardBottomActions: {
+    marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  cardBottomActionsSingle: {
+    marginTop: 10,
+    alignItems: "flex-end",
+  },
+  cardInfo: { color: C.text, fontSize: 16, lineHeight: 24, fontWeight: "500", ...T.medium },
+  cardInfoLabel: { fontWeight: "800" },
+  cardTitle: { color: C.text, fontSize: 19, fontWeight: "700", ...T.bold },
+  cardDate: { color: C.text, fontSize: 15, marginTop: 4, fontWeight: "600" },
+  cardText: { color: C.text, fontSize: 14, lineHeight: 20, fontWeight: "500" },
   cardActions: { flexDirection: "row", gap: 8 },
-  actionBtn: {
-    width: 38,
-    height: 38,
+  cardActionsVertical: {
+    gap: 8,
+    width: 128,
+  },
+  smallActionBtn: {
+    minHeight: 44,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ffffff08",
+    backgroundColor: C.accent,
     borderWidth: 1,
     borderColor: C.cardBorder,
+    paddingHorizontal: 8,
   },
-  actionBtnEdit: { borderColor: C.accent + "44" },
-  actionBtnDelete: { borderColor: C.red + "44" },
-  actionBtnText: { fontSize: 16 },
-  cardObs: { color: C.textSub, fontSize: 13, fontStyle: "italic", marginTop: 4 },
+  smallActionText: { fontSize: 13, color: C.text, fontWeight: "700", textAlign: "center", ...T.medium },
+  deleteBtn: { backgroundColor: "#f7e6cf" },
+  deleteBtnText: { color: C.red, fontSize: 16, fontWeight: "700" },
   emptyText: { color: C.textSub, textAlign: "center", marginTop: 60, fontSize: 15 },
   btnAction: {
     flex: 1,
-    paddingVertical: 10,
+    minHeight: 44,
     borderRadius: 10,
     alignItems: "center",
+    justifyContent: "center",
     marginHorizontal: 4,
+    backgroundColor: C.accent,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
   },
-  btnActionText: { color: "#000", fontWeight: "bold", fontSize: 14 },
+  btnActionSecondary: {
+    backgroundColor: "#f8e8cb",
+  },
+  btnActionText: { color: C.text, fontWeight: "700", fontSize: 14 },
+  btnActionSecondaryText: {
+    color: C.text,
+  },
 });

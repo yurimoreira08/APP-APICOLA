@@ -18,5 +18,10 @@ export const useResumoCaixas = () => {
     }
   }, []);
 
-  return { caixas, isLoading, load };
+  const renameCaixa = useCallback(async (apiarioId: string, caixa: number, nome: string) => {
+    await resumoService.renameCaixa(apiarioId, caixa, nome);
+    await load();
+  }, [load]);
+
+  return { caixas, isLoading, load, renameCaixa };
 };

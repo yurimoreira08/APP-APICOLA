@@ -1,10 +1,12 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { C } from "../theme/colors";
+import { T } from "../theme/typography";
 
 type Props = {
-  onGoToNovoApiario: () => void;
+  onGoToIscagem: () => void;
   onGoToVerApiarios: () => void;
   onGoToRevisoesManejo: () => void;
   onGoToCaixas: () => void;
@@ -21,117 +23,125 @@ type Props = {
  * @param {Props} props Propriedades do componente, contendo as funções de roteamento.
  */
 export const MenuScreen = ({ 
-  onGoToNovoApiario, 
+  onGoToIscagem,
   onGoToVerApiarios,
   onGoToRevisoesManejo,
   onGoToCaixas
 }: Props) => {
+  const actions = [
+    { label: "Cadastro de Apiários", icon: <Feather name="map-pin" size={18} color={C.text} />, onPress: onGoToVerApiarios },
+    { label: "Revisão e Manejo", icon: <MaterialCommunityIcons name="beehive-outline" size={20} color={C.text} />, onPress: onGoToRevisoesManejo },
+    { label: "Relatórios", icon: <Feather name="bar-chart-2" size={18} color={C.text} />, onPress: onGoToRevisoesManejo },
+    { label: "Iscagem", icon: <MaterialCommunityIcons name="target" size={18} color={C.text} />, onPress: onGoToIscagem },
+    { label: "Caixas", icon: <Feather name="archive" size={18} color={C.text} />, onPress: onGoToCaixas },
+    { label: "Início", icon: <Feather name="home" size={18} color={C.text} />, onPress: onGoToVerApiarios },
+  ];
+
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-           {/* Placeholder for left align if needed */}
-           <View style={{width: 38}} />
+      <View style={styles.topBar}>
+        <View style={styles.brandRow}>
+          <MaterialCommunityIcons name="bee" size={24} color={C.text} />
+          <Text style={styles.topTitle}>Apícola</Text>
         </View>
-        <Text style={styles.headerTitle}>🐝 Apícola</Text>
-        <Text style={styles.headerSub}>O que você deseja fazer?</Text>
+        <Feather name="bell" size={20} color={C.text} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: 12, paddingBottom: 40 }}>
-        
-        <TouchableOpacity style={styles.card} onPress={onGoToNovoApiario} activeOpacity={0.8}>
-            <Text style={styles.icon}>➕</Text>
-            <Text style={styles.cardTitle}>Novo Apiário</Text>
-            <Text style={styles.cardDesc}>Adicione local</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.card} onPress={onGoToVerApiarios} activeOpacity={0.8}>
-            <Text style={styles.icon}>📋</Text>
-            <Text style={styles.cardTitle}>Ver Apiários</Text>
-            <Text style={styles.cardDesc}>Gerenciar</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.card} onPress={onGoToRevisoesManejo} activeOpacity={0.8}>
-          <Text style={styles.icon}>🍯</Text>
-          <Text style={styles.cardTitle}>Avaliações</Text>
-          <Text style={styles.cardDesc}>Revisar/Manejo</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.card} onPress={onGoToCaixas} activeOpacity={0.8}>
-            <Text style={styles.icon}>📦</Text>
-            <Text style={styles.cardTitle}>Caixas</Text>
-            <Text style={styles.cardDesc}>Individuais</Text>
-        </TouchableOpacity>
-
+      <ScrollView style={styles.content} contentContainerStyle={styles.grid}>
+        {actions.map((action) => (
+          <TouchableOpacity
+            key={action.label}
+            style={styles.card}
+            onPress={action.onPress}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={action.label}
+          >
+            <View style={styles.cardIcon}>{action.icon}</View>
+            <Text style={styles.cardTitle}>{action.label}</Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 30,
+  root: {
+    flex: 1,
+    backgroundColor: C.bg,
+  },
+  topBar: {
+    paddingTop: 56,
+    paddingBottom: 14,
+    paddingHorizontal: 18,
+    backgroundColor: C.navBg,
+    borderBottomWidth: 1,
+    borderBottomColor: C.cardBorder,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
   },
-  headerTop: {
-      flexDirection: 'row',
-      width: '100%',
-      justifyContent: 'space-between',
-      paddingHorizontal: 20,
-      marginBottom: 20
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  iconBtn: {
-      padding: 8,
-      backgroundColor: C.card,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: C.cardBorder,
-      position: 'relative'
+  topTitle: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: C.text,
+    ...T.bold,
   },
-  smallIcon: {
-      fontSize: 20
+  topIcon: {
+    fontSize: 20,
+    color: C.text,
+    fontWeight: "700",
   },
-  notificationDot: {
-      width: 10,
-      height: 10,
-      backgroundColor: C.accent,
-      borderRadius: 5,
-      position: 'absolute',
-      top: 4,
-      right: 4,
-      borderWidth: 2,
-      borderColor: C.card
-  },
-  headerTitle: { fontSize: 32, fontWeight: "900", color: C.accent },
-  headerSub: { fontSize: 16, color: C.textSub, marginTop: 8 },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingBottom: 40,
+    rowGap: 12,
   },
   card: {
-    backgroundColor: C.card,
-    borderRadius: 16,
-    padding: 16,
+    width: "48.5%",
+    minHeight: 104,
+    backgroundColor: C.accent,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
     borderWidth: 1,
     borderColor: C.cardBorder,
     alignItems: "center",
-    gap: 8,
-    width: "48%",
+    justifyContent: "center",
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  icon: {
-    fontSize: 40,
+  cardIcon: {
+    marginBottom: 8,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: C.surfaceSoft,
+    alignItems: "center",
+    justifyContent: "center",
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "700",
     color: C.text,
-    textAlign: "center"
-  },
-  cardDesc: {
-    fontSize: 12,
-    color: C.textSub,
     textAlign: "center",
+    ...T.medium,
   },
 });
