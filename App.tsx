@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
-import { initDb } from "./database/db";
-import { StyleSheet, View, TouchableOpacity, Platform, BackHandler, SafeAreaView } from "react-native";
+import {
+  authenticateUser,
+  clearAppSession,
+  createUserAccount,
+  getAppSession,
+  initDb,
+  setAppSession,
+} from "./database/db";
+import { StyleSheet, View, TouchableOpacity, Platform, BackHandler, SafeAreaView, Text } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { MenuScreen } from "./src/screens/MenuScreen";
 import { ListaApiariosScreen } from "./src/screens/ListaApiariosScreen";
@@ -13,6 +20,12 @@ import { CaixasGeralScreen } from "./src/screens/CaixasGeralScreen";
 import { EscolhaAcaoScreen } from "./src/screens/EscolhaAcaoScreen";
 import { IscagemScreen } from "./src/screens/IscagemScreen";
 import { IscagemFormScreen } from "./src/screens/IscagemFormScreen";
+import { OpeningScreen } from "./src/screens/OpeningScreen";
+import { LoginScreen } from "./src/screens/LoginScreen";
+import { SignupScreen } from "./src/screens/SignupScreen";
+import { RelatoriosScreen } from "./src/screens/RelatoriosScreen";
+import { VoltarCasaScreen } from "./src/screens/VoltarCasaScreen";
+import { setWebPreviewModeActive } from "./src/runtime/webPreviewMode";
 
 import type { Apiario } from "./src/types/Apiario";
 import type { Revisao } from "./src/types/Revisao";
@@ -30,9 +43,12 @@ type ScreenName =
   | "caixas"
   | "iscagem"
   | "iscagem_form"
-  | "configuracoes";
+  | "configuracoes"
+  | "relatorios"
+  | "voltar_casa";
 
 type ApiarioFormOrigin = "apiarios" | "apiarios_revisao";
+type AuthView = "opening" | "login" | "signup";
 
 import { C } from "./src/theme/colors";
 import { T } from "./src/theme/typography";
@@ -48,6 +64,10 @@ import { T } from "./src/theme/typography";
 export default function App() {
   const [screen, setScreen] = useState<ScreenName>("menu");
   const [dbReady, setDbReady] = useState(false);
+  const [bootError, setBootError] = useState<string | null>(null);
+  const [webPreviewMode, setWebPreviewMode] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authView, setAuthView] = useState<AuthView>("opening");
   
   const [editingApiario, setEditingApiario] = useState<Apiario | undefined>(undefined);
   const [selectedApiario, setSelectedApiario] = useState<Apiario | undefined>(undefined);
@@ -57,15 +77,52 @@ export default function App() {
   const [caixasBackScreen, setCaixasBackScreen] = useState<"menu" | "apiarios_revisao">("menu");
   const [apiarioFormOrigin, setApiarioFormOrigin] = useState<ApiarioFormOrigin>("apiarios");
 
+  const boot = async () => {
+    try {
+      setBootError(null);
+      setWebPreviewModeActive(false);
+      await initDb();
+      const session = await getAppSession();
+      setIsAuthenticated(session.isLoggedIn);
+      setWebPreviewMode(false);
+      setDbReady(true);
+    } catch (e: any) {
+      if (Platform.OS === "web") {
+        console.warn("SQLite indisponível no Web; iniciando modo preview com mock de dados.");
+        setWebPreviewModeActive(true);
+        setWebPreviewMode(true);
+        setIsAuthenticated(true);
+        setBootError(null);
+        setDbReady(true);
+        return;
+      }
+
+      setBootError(e?.message || "Falha ao inicializar banco de dados local.");
+      setDbReady(true);
+    }
+  };
+
   useEffect(() => {
-    initDb().then(() => setDbReady(true)).catch(console.error);
+    void boot();
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
+        if (authView === "signup") {
+          setAuthView("login");
+          return true;
+        }
+        return false;
+      });
+
+      return () => backHandler.remove();
+    }
+
     const backAction = () => {
       if (screen === "menu") return false; // Default behavior (exit app)
       
-      if (screen === "configuracoes" || screen === "apiarios") {
+      if (screen === "configuracoes" || screen === "apiarios" || screen === "relatorios" || screen === "voltar_casa") {
         setScreen("menu");
       } else if (screen === "caixas") {
         setScreen(caixasBackScreen);
@@ -98,20 +155,100 @@ export default function App() {
     );
 
     return () => backHandler.remove();
-  }, [screen, selectedCaixa, caixasBackScreen, apiarioFormOrigin]);
+  }, [isAuthenticated, authView, screen, selectedCaixa, caixasBackScreen, apiarioFormOrigin]);
 
   if (!dbReady) {
     return null; /* Optional splash screen */
+  }
+
+  if (bootError) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.bootErrorWrap}>
+          <Text style={styles.bootErrorTitle}>Falha ao iniciar o app</Text>
+          <Text style={styles.bootErrorText}>{bootError}</Text>
+          <TouchableOpacity style={styles.bootRetryBtn} onPress={() => void boot()}>
+            <Text style={styles.bootRetryBtnText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const handleContinueLocal = async () => {
+    await setAppSession({ isLoggedIn: true, authMode: "local" });
+    setIsAuthenticated(true);
+  };
+
+  const handleLoginCloud = async (email: string, senha: string) => {
+    const user = await authenticateUser(email, senha);
+    if (!user) {
+      throw new Error("Usuário ou senha inválidos.");
+    }
+
+    await setAppSession({ isLoggedIn: true, authMode: "cloud", userId: user.id });
+    setIsAuthenticated(true);
+  };
+
+  const handleSignupCloud = async (nome: string, email: string, senha: string) => {
+    const user = await createUserAccount(nome, email, senha);
+    await setAppSession({ isLoggedIn: true, authMode: "cloud", userId: user.id });
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = async () => {
+    if (webPreviewMode) {
+      setScreen("menu");
+      return;
+    }
+
+    await clearAppSession();
+    setIsAuthenticated(false);
+    setAuthView("login");
+    setScreen("menu");
+  };
+
+  const navigateWithPreviewGuard = (nextScreen: ScreenName) => {
+    setScreen(nextScreen);
+  };
+
+  if (!isAuthenticated) {
+    if (authView === "opening") {
+      return <OpeningScreen onDone={() => setAuthView("login")} />;
+    }
+
+    if (authView === "signup") {
+      return (
+        <SignupScreen
+          onSignupCloud={handleSignupCloud}
+          onBackToLogin={() => setAuthView("login")}
+        />
+      );
+    }
+
+    return (
+      <LoginScreen
+        onLoginCloud={handleLoginCloud}
+        onContinueLocal={handleContinueLocal}
+        onGoToSignup={() => setAuthView("signup")}
+      />
+    );
   }
 
   const renderScreen = () => {
     if (screen === "menu") {
       return (
         <MenuScreen 
-          onGoToIscagem={() => setScreen("iscagem")}
-          onGoToVerApiarios={() => setScreen("apiarios")}
-          onGoToRevisoesManejo={() => setScreen("escolha_acao")}
+          onGoToIscagem={() => navigateWithPreviewGuard("iscagem")}
+          onGoToVerApiarios={() => navigateWithPreviewGuard("apiarios")}
+          onGoToRevisoesManejo={() => navigateWithPreviewGuard("escolha_acao")}
+          onGoToRelatorios={() => navigateWithPreviewGuard("relatorios")}
+          onGoToVoltarCasa={() => navigateWithPreviewGuard("voltar_casa")}
           onGoToCaixas={() => {
+            if (webPreviewMode) {
+              navigateWithPreviewGuard("caixas");
+              return;
+            }
             setCaixasBackScreen("menu");
             setSelectedApiario(undefined);
             setSelectedCaixa(undefined);
@@ -119,6 +256,14 @@ export default function App() {
           }}
         />
       );
+    }
+
+    if (screen === "relatorios") {
+      return <RelatoriosScreen onBack={() => setScreen("menu")} />;
+    }
+
+    if (screen === "voltar_casa") {
+      return <VoltarCasaScreen onBack={() => setScreen("menu")} />;
     }
 
     if (screen === "iscagem") {
@@ -150,7 +295,7 @@ export default function App() {
     }
   
     if (screen === "configuracoes") {
-      return <ConfiguracoesScreen onBack={() => setScreen("menu")} />;
+      return <ConfiguracoesScreen onBack={() => setScreen("menu")} onLogout={handleLogout} />;
     }
   
     if (screen === "apiarios") {
@@ -291,6 +436,13 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.content}>
+          {webPreviewMode ? (
+            <View style={styles.previewBanner}>
+              <Text style={styles.previewBannerText}>
+                Modo visualizacao Web ativo: dados estao vindo de mock local em memoria.
+              </Text>
+            </View>
+          ) : null}
           {renderScreen()}
         </View>
 
@@ -298,7 +450,7 @@ export default function App() {
           <View style={styles.footer}>
             <TouchableOpacity 
               style={[styles.footerBtn, screen === "menu" ? styles.footerBtnActive : null]}
-              onPress={() => setScreen("menu")}
+              onPress={() => navigateWithPreviewGuard("menu")}
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Ir para início"
@@ -310,7 +462,7 @@ export default function App() {
 
             <TouchableOpacity 
               style={[styles.footerBtn, screen === "configuracoes" ? styles.footerBtnActive : null]}
-              onPress={() => setScreen("configuracoes")}
+              onPress={() => navigateWithPreviewGuard("configuracoes")}
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Ir para configurações"
@@ -338,6 +490,22 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  previewBanner: {
+    marginHorizontal: 14,
+    marginTop: 10,
+    marginBottom: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    backgroundColor: C.surfaceSoft,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  previewBannerText: {
+    color: C.text,
+    textAlign: "center",
+    ...T.medium,
+  },
   footerWrap: {
     paddingHorizontal: 14,
     paddingBottom: Platform.OS === "ios" ? 16 : 12,
@@ -351,11 +519,18 @@ const styles = StyleSheet.create({
     padding: 6,
     borderWidth: 1,
     borderColor: C.cardBorder,
-    elevation: 8,
-    shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    ...Platform.select({
+      web: {
+        boxShadow: "0px 4px 12px rgba(109, 76, 31, 0.16)",
+      },
+      default: {
+        elevation: 8,
+        shadowColor: C.shadow,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+      },
+    }),
   },
   footerBtn: {
     minHeight: 70,
@@ -380,5 +555,40 @@ const styles = StyleSheet.create({
   footerIconWrapActive: {
     backgroundColor: C.accent,
     borderColor: C.text,
-  }
+  },
+  bootErrorWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 22,
+    gap: 10,
+    backgroundColor: C.bg,
+  },
+  bootErrorTitle: {
+    color: C.text,
+    fontSize: 24,
+    fontWeight: "800",
+    ...T.bold,
+  },
+  bootErrorText: {
+    color: C.textSub,
+    textAlign: "center",
+    ...T.medium,
+  },
+  bootRetryBtn: {
+    marginTop: 6,
+    minHeight: 44,
+    borderRadius: 10,
+    backgroundColor: C.accent,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bootRetryBtnText: {
+    color: C.text,
+    fontWeight: "800",
+    ...T.bold,
+  },
 });

@@ -12,6 +12,7 @@
     "@expo/vector-icons": "^15.1.1",
     "expo": "~54.0.33",
     "expo-dev-client": "~6.0.20",
+    "expo-location": "^55.1.4",
     "expo-modules-core": "~3.0.29",
     "expo-speech": "~14.0.8",
     "expo-speech-recognition": "^3.1.0",
@@ -20,6 +21,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
+    "react-native-maps": "^1.27.2",
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {

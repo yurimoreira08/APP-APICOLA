@@ -7,6 +7,7 @@ import { T } from "../theme/typography";
 
 type Props = {
   onBack: () => void;
+  onLogout: () => void;
 };
 
 /**
@@ -15,7 +16,7 @@ type Props = {
  * @description
  * Interface base para opções gerais do aplicativo e do usuário.
  */
-export const ConfiguracoesScreen = ({ onBack }: Props) => {
+export const ConfiguracoesScreen = ({ onBack, onLogout }: Props) => {
   return (
     <View style={styles.root}>
       <View style={styles.topBar}>
@@ -43,6 +44,10 @@ export const ConfiguracoesScreen = ({ onBack }: Props) => {
             <Text style={styles.cardTitle}>Geral</Text>
             <Text style={styles.cardSub}>Outras configurações</Text>
         </View>
+
+        <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
+          <Text style={styles.logoutText}>Sair</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -86,4 +91,21 @@ const styles = StyleSheet.create({
   },
   cardTitle: { color: C.text, fontSize: 17, fontWeight: "700", ...T.bold },
   cardSub: { color: C.textSub, fontSize: 14, marginTop: 4, ...T.medium }
+  ,
+  logoutBtn: {
+    marginTop: 6,
+    minHeight: 46,
+    borderRadius: 10,
+    backgroundColor: "#f7e6cf",
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutText: {
+    color: C.red,
+    fontWeight: "800",
+    fontSize: 16,
+    ...T.bold,
+  },
 });

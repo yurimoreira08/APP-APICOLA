@@ -12,6 +12,8 @@ type Props = {
   onGoToVerApiarios: () => void;
   onGoToRevisoesManejo: () => void;
   onGoToCaixas: () => void;
+  onGoToRelatorios: () => void;
+  onGoToVoltarCasa: () => void;
 };
 
 /**
@@ -28,16 +30,18 @@ export const MenuScreen = ({
   onGoToIscagem,
   onGoToVerApiarios,
   onGoToRevisoesManejo,
-  onGoToCaixas
+  onGoToCaixas,
+  onGoToRelatorios,
+  onGoToVoltarCasa,
 }: Props) => {
   const actionIconSize = 30;
   const actions = [
     { label: "Cadastro de Apiários", icon: <Feather name="map-pin" size={actionIconSize} color={C.text} />, onPress: onGoToVerApiarios },
     { label: "Revisão e Manejo", icon: <MaterialCommunityIcons name="beehive-outline" size={actionIconSize} color={C.text} />, onPress: onGoToRevisoesManejo },
-    { label: "Relatórios", icon: <Feather name="bar-chart-2" size={actionIconSize} color={C.text} />, onPress: onGoToRevisoesManejo },
+    { label: "Relatórios", icon: <Feather name="bar-chart-2" size={actionIconSize} color={C.text} />, onPress: onGoToRelatorios },
     { label: "Iscagem", icon: <MaterialCommunityIcons name="target" size={actionIconSize} color={C.text} />, onPress: onGoToIscagem },
     { label: "Caixas", icon: <Feather name="archive" size={actionIconSize} color={C.text} />, onPress: onGoToCaixas },
-    { label: "Início", icon: <Feather name="home" size={actionIconSize} color={C.text} />, onPress: onGoToVerApiarios },
+    { label: "Voltar pra casa", icon: <Feather name="navigation" size={actionIconSize} color={C.text} />, onPress: onGoToVoltarCasa },
   ];
 
   return (
