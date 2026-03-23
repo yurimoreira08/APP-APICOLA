@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { initDb } from "./database/db";
-import { StyleSheet, View, Text, TouchableOpacity, Platform, BackHandler, SafeAreaView } from "react-native";
+import { StyleSheet, View, TouchableOpacity, Platform, BackHandler, SafeAreaView } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { MenuScreen } from "./src/screens/MenuScreen";
 import { ListaApiariosScreen } from "./src/screens/ListaApiariosScreen";
@@ -303,8 +303,9 @@ export default function App() {
               accessibilityRole="button"
               accessibilityLabel="Ir para início"
             >
-              <Ionicons name="home-outline" size={22} color={C.text} />
-              <Text style={[styles.footerText, screen === "menu" ? styles.footerTextActive : null]}>Início</Text>
+              <View style={[styles.footerIconWrap, screen === "menu" ? styles.footerIconWrapActive : null]}>
+                <Ionicons name="home-outline" size={30} color={C.text} />
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -314,8 +315,9 @@ export default function App() {
               accessibilityRole="button"
               accessibilityLabel="Ir para configurações"
             >
-              <Feather name="settings" size={20} color={C.text} />
-              <Text style={[styles.footerText, screen === "configuracoes" ? styles.footerTextActive : null]}>Config</Text>
+              <View style={[styles.footerIconWrap, screen === "configuracoes" ? styles.footerIconWrapActive : null]}>
+                <Feather name="settings" size={29} color={C.text} />
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -338,7 +340,7 @@ const styles = StyleSheet.create({
   },
   footerWrap: {
     paddingHorizontal: 14,
-    paddingBottom: Platform.OS === "ios" ? 14 : 10,
+    paddingBottom: Platform.OS === "ios" ? 16 : 12,
     paddingTop: 6,
     backgroundColor: C.surface,
   },
@@ -356,30 +358,27 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   footerBtn: {
-    minHeight: 56,
+    minHeight: 70,
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     flex: 1,
-    flexDirection: "row",
-    gap: 8,
   },
   footerBtnActive: {
     backgroundColor: C.navActive,
   },
-  footerIcon: {
-    fontSize: 24,
-    color: C.text,
+  footerIconWrap: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: C.surfaceSoft,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  footerText: {
-    fontSize: 14,
-    color: C.textSub,
-    fontWeight: "600",
-    ...T.medium,
-  },
-  footerTextActive: {
-    color: C.text,
-    fontWeight: "800",
-    ...T.bold,
+  footerIconWrapActive: {
+    backgroundColor: C.accent,
+    borderColor: C.text,
   }
 });

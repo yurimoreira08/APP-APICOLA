@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { FlatList, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { FlatList, Image, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useResumoCaixas } from "../hooks/useResumoCaixas";
 import type { ResumoCaixa } from "../../database/db";
 
 import { C } from "../theme/colors";
 import { T } from "../theme/typography";
+
+const headerBeeLogo = require("../../assets/splash-icon.png");
 
 type Props = {
   onFazerRevisao: (apiarioId: string, caixa: number, apiarioNome?: string) => void;
@@ -96,7 +98,8 @@ export const CaixasGeralScreen = ({ onFazerRevisao, onBack, apiarioIdFiltro }: P
           <TouchableOpacity onPress={onBack} style={styles.backBtn}>
             <Feather name="arrow-left" size={22} color={C.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>🐝 Revisão</Text>
+          <Image source={headerBeeLogo} style={styles.headerLogo} resizeMode="contain" />
+          <Text style={styles.headerTitle}>Revisão</Text>
         </View>
       </View>
 
@@ -154,6 +157,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backBtnText: { fontSize: 26, fontWeight: "700", color: C.text },
+  headerLogo: { width: 84, height: 84, marginRight: 8 },
   headerTitle: { fontSize: 22, fontWeight: "800", color: C.text, ...T.bold },
   searchWrap: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   searchInput: {

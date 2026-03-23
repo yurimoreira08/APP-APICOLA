@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
+  Image,
   TextInput,
   StyleSheet,
   Text,
@@ -16,6 +17,8 @@ import { useVoiceInput } from "../voice/useVoiceInput";
 
 import { C } from "../theme/colors";
 import { T } from "../theme/typography";
+
+const headerBeeLogo = require("../../assets/splash-icon.png");
 
 type Props = {
   apiario?: Apiario;
@@ -118,8 +121,9 @@ export const ListaRevisoesScreen = ({ apiario, caixaFiltro, onNewRevisao, onEdit
           <TouchableOpacity onPress={onBack} style={styles.backBtn}>
             <Feather name="arrow-left" size={22} color={C.text} />
           </TouchableOpacity>
+          <Image source={headerBeeLogo} style={styles.headerLogo} resizeMode="contain" />
           <Text style={styles.headerTitle}>
-            🐝 Revisão
+            Revisão
           </Text>
         </View>
         <TouchableOpacity onPress={onNewRevisao} style={styles.addBtn}>
@@ -190,6 +194,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backBtnText: { fontSize: 26, color: C.text, fontWeight: "700" },
+  headerLogo: { width: 84, height: 84, marginRight: 8 },
   headerTitle: { fontSize: 22, fontWeight: "800", color: C.text, ...T.bold },
   addBtn: {
     backgroundColor: C.accent,

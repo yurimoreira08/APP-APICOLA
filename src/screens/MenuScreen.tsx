@@ -1,9 +1,11 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Image } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { C } from "../theme/colors";
 import { T } from "../theme/typography";
+
+const appLogo = require("../../assets/splash-icon.png");
 
 type Props = {
   onGoToIscagem: () => void;
@@ -28,23 +30,24 @@ export const MenuScreen = ({
   onGoToRevisoesManejo,
   onGoToCaixas
 }: Props) => {
+  const actionIconSize = 30;
   const actions = [
-    { label: "Cadastro de Apiários", icon: <Feather name="map-pin" size={18} color={C.text} />, onPress: onGoToVerApiarios },
-    { label: "Revisão e Manejo", icon: <MaterialCommunityIcons name="beehive-outline" size={20} color={C.text} />, onPress: onGoToRevisoesManejo },
-    { label: "Relatórios", icon: <Feather name="bar-chart-2" size={18} color={C.text} />, onPress: onGoToRevisoesManejo },
-    { label: "Iscagem", icon: <MaterialCommunityIcons name="target" size={18} color={C.text} />, onPress: onGoToIscagem },
-    { label: "Caixas", icon: <Feather name="archive" size={18} color={C.text} />, onPress: onGoToCaixas },
-    { label: "Início", icon: <Feather name="home" size={18} color={C.text} />, onPress: onGoToVerApiarios },
+    { label: "Cadastro de Apiários", icon: <Feather name="map-pin" size={actionIconSize} color={C.text} />, onPress: onGoToVerApiarios },
+    { label: "Revisão e Manejo", icon: <MaterialCommunityIcons name="beehive-outline" size={actionIconSize} color={C.text} />, onPress: onGoToRevisoesManejo },
+    { label: "Relatórios", icon: <Feather name="bar-chart-2" size={actionIconSize} color={C.text} />, onPress: onGoToRevisoesManejo },
+    { label: "Iscagem", icon: <MaterialCommunityIcons name="target" size={actionIconSize} color={C.text} />, onPress: onGoToIscagem },
+    { label: "Caixas", icon: <Feather name="archive" size={actionIconSize} color={C.text} />, onPress: onGoToCaixas },
+    { label: "Início", icon: <Feather name="home" size={actionIconSize} color={C.text} />, onPress: onGoToVerApiarios },
   ];
 
   return (
     <View style={styles.root}>
       <View style={styles.topBar}>
         <View style={styles.brandRow}>
-          <MaterialCommunityIcons name="bee" size={24} color={C.text} />
+          <Image source={appLogo} style={styles.topLogo} resizeMode="contain" />
           <Text style={styles.topTitle}>Apícola</Text>
         </View>
-        <Feather name="bell" size={20} color={C.text} />
+        <Feather name="bell" size={26} color={C.text} />
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.grid}>
@@ -85,7 +88,11 @@ const styles = StyleSheet.create({
   brandRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
+  },
+  topLogo: {
+    width: 84,
+    height: 84,
   },
   topTitle: {
     fontSize: 28,
@@ -112,7 +119,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "48.5%",
-    minHeight: 104,
+    minHeight: 124,
     backgroundColor: C.accent,
     borderRadius: 14,
     paddingHorizontal: 12,
@@ -128,17 +135,19 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardIcon: {
-    marginBottom: 8,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    marginBottom: 10,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     backgroundColor: C.surfaceSoft,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   cardTitle: {
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 17,
+    lineHeight: 21,
     fontWeight: "700",
     color: C.text,
     textAlign: "center",

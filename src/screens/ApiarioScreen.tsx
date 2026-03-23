@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +15,8 @@ import type { Apiario } from "../types/Apiario";
 
 import { C } from "../theme/colors";
 import { T } from "../theme/typography";
+
+const headerBeeLogo = require("../../assets/splash-icon.png");
 
 /**
  * Propriedades do Formulário de Apiário
@@ -78,7 +81,10 @@ export const ApiarioScreen = ({
         <TouchableOpacity onPress={onBack} style={styles.backBtn}>
           <Feather name="arrow-left" size={22} color={C.text} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>🐝 Cadastrar Apiário</Text>
+        <View style={styles.topBarCenter}>
+          <Image source={headerBeeLogo} style={styles.topBarLogo} resizeMode="contain" />
+          <Text style={styles.topBarTitle}>Cadastrar Apiário</Text>
+        </View>
         <Feather name="bell" size={20} color={C.text} />
       </View>
 
@@ -153,7 +159,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backBtnText: { color: C.text, fontWeight: "700", fontSize: 26 },
-  topBarTitle: { fontSize: 20, fontWeight: "800", color: C.text, flex: 1, ...T.bold },
+  topBarCenter: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8 },
+  topBarLogo: { width: 84, height: 84 },
+  topBarTitle: { fontSize: 20, fontWeight: "800", color: C.text, ...T.bold },
   topBarIcon: { fontSize: 20, color: C.text },
   header: { alignItems: "center", paddingTop: 14, paddingBottom: 4 },
   headerTitle: { fontSize: 28, fontWeight: "700", color: C.text, ...T.bold },
